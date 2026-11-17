@@ -16,7 +16,8 @@ _QUERY_TIMEOUT_S = 300.0
 _PS_TEMPLATE = r"""
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Stop"
-$cfg = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("__CFG_B64__")) | ConvertFrom-Json
+$rawCfg = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("__CFG_B64__"))
+$cfg = $rawCfg | ConvertFrom-Json
 $parts = @()
 $qchar = [char]34
 if ($cfg.file) {
@@ -35,22 +36,25 @@ $q = $conn.NewObject("Запрос")
 $q.Text = $cfg.query
 $res = $q.Execute()
 $tt = $res.Выгрузить()
-$colsObj = $tt.GetType().InvokeMember("Колонки", [Reflection.BindingFlags]::GetProperty, $null, $tt, $null)
-$colCount = $colsObj.GetType().InvokeMember("Количество", [Reflection.BindingFlags]::InvokeMethod, $null, $colsObj, $null)
+$gp = [Reflection.BindingFlags]::GetProperty
+$im = [Reflection.BindingFlags]::InvokeMethod
+$colsObj = $tt.GetType().InvokeMember("Колонки", $gp, $null, $tt, $null)
+$colCount = $colsObj.GetType().InvokeMember("Количество", $im, $null, $colsObj, $null)
 $cols = @()
 for ($i = 0; $i -lt $colCount; $i++) {
-    $cObj = $colsObj.GetType().InvokeMember("Получить", [Reflection.BindingFlags]::InvokeMethod, $null, $colsObj, @($i))
-    $cols += [string]$cObj.GetType().InvokeMember("Имя", [Reflection.BindingFlags]::GetProperty, $null, $cObj, $null)
+    $cObj = $colsObj.GetType().InvokeMember("Получить", $im, $null, $colsObj, @($i))
+    $cols += [string]$cObj.GetType().InvokeMember("Имя", $gp, $null, $cObj, $null)
 }
 $rows = @()
 foreach ($r in $tt) {
     $obj = [ordered]@{}
     for ($i = 0; $i -lt $colCount; $i++) {
         $col = $cols[$i]
-        $val = $r.GetType().InvokeMember("Получить", [Reflection.BindingFlags]::InvokeMethod, $null, $r, @($i))
+        $val = $r.GetType().InvokeMember("Получить", $im, $null, $r, @($i))
         if ($null -eq $val) {
             $obj[$col] = $null
-        } elseif ($val -is [bool] -or $val -is [int] -or $val -is [long] -or $val -is [double] -or $val -is [decimal] -or $val -is [string]) {
+        } elseif ($val -is [bool] -or $val -is [int] -or $val -is [long] -or
+                  $val -is [double] -or $val -is [decimal] -or $val -is [string]) {
             $obj[$col] = $val
         } elseif ($val -is [datetime]) {
             $obj[$col] = $val.ToString("s")
@@ -110,7 +114,7 @@ def build_encoded_command(
 
 
 def _get_env(name: str) -> str | None:
-    """Read an env var from process environment, falling back to Windows HKCU\\Environment."""
+    r"""Read an env var from process environment, falling back to Windows HKCU\Environment."""
     val = os.environ.get(name)
     if val is not None:
         return val

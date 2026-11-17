@@ -1,4 +1,4 @@
-"""Implementation of `harness rules`: unpack and pack 1C Data Conversion 2.x rules via `gitrules`."""
+"""Implementation of `harness rules`: unpack/pack 1C Data Conversion 2.x rules via `gitrules`."""
 
 import shutil
 import tempfile

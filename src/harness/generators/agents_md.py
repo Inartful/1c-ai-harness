@@ -93,10 +93,19 @@ Rules:
 - Do not close the task while any validator, linter, or syntax error in changed code remains.
 
 ## Exchange Rules (КД 2.x) & Live Infobase Queries
-- **Reference configs:** use `harness decompile <file.cf> <out_dir>` to export source/target `.cf` into readable XML/BSL via `ibcmd`.
-- **КД 2.x rules:** never edit monolithic `ExchangeRules.xml` directly. Run `harness rules unpack <rules.zip> <dir>` (uses `gitrules export`), edit `.bsl` handlers, validate syntax with `bsl-language-server analyze -s <dir>`, and pack back with `harness rules pack <dir> <out.zip>`.
-- **Direction rule:** `ПослеЗагрузки` / `ПриЗагрузке` handlers for `A -> B` execute on the **target** base `B`. In a B-side rules archive, `A -> B` is usually `CorrespondentExchangeRules.xml`, while `ExchangeRules.xml` is `B -> A`.
-- **Live queries:** use `harness query --server <Srvr> --ref <Ref> -q "<1C query>"` (returns JSON via `V83.COMConnector`). Credentials and SSH jump host (`ONEC_SSH`, `ONEC_USR`, `ONEC_PWD`) are read automatically from process env or Windows `HKCU\\Environment` — do not ask the user for passwords if already configured. Pass `--ssh local` to bypass `ONEC_SSH`.
+- **Reference configs:** use `harness decompile <file.cf> <out_dir>` to export source/target
+  `.cf` into readable XML/BSL via `ibcmd`.
+- **КД 2.x rules:** never edit monolithic `ExchangeRules.xml` directly. Run
+  `harness rules unpack <rules.zip> <dir>` (uses `gitrules export`), edit `.bsl` handlers,
+  validate syntax with `bsl-language-server analyze -s <dir>`, and pack back with
+  `harness rules pack <dir> <out.zip>`.
+- **Direction rule:** `ПослеЗагрузки` / `ПриЗагрузке` handlers for `A -> B` execute on the
+  **target** base `B`. In a B-side rules archive, `A -> B` is usually
+  `CorrespondentExchangeRules.xml`, while `ExchangeRules.xml` is `B -> A`.
+- **Live queries:** use `harness query --server <Srvr> --ref <Ref> -q "<1C query>"`
+  (returns JSON via `V83.COMConnector`). Credentials and SSH jump host (`ONEC_SSH`, `ONEC_USR`,
+  `ONEC_PWD`) are read automatically from process env or Windows `HKCU\\Environment` — do not
+  ask the user for passwords if already configured. Pass `--ssh local` to bypass `ONEC_SSH`.
 """
 
 

@@ -297,7 +297,7 @@ def query(
     ssh: Annotated[str | None, typer.Option(help="SSH target user@host (or ONEC_SSH env).")] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = True,
 ) -> None:
-    """Run a 1C query against a local or remote (SSH) infobase via V83.COMConnector (Windows COM)."""
+    """Run a 1C query against a local or remote infobase via V83.COMConnector (Windows)."""
     text = query_text or ""
     if query_file is not None:
         if not query_file.is_file():
