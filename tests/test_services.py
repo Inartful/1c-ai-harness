@@ -75,6 +75,7 @@ def test_init_refreshes_claude_copy_of_generated_agents(tmp_path: Path) -> None:
 def test_init_keeps_hand_edited_claude_md(tmp_path: Path) -> None:
     root = tmp_path / "proj"
     init_workspace(InitOptions(target_dir=root))
+    (root / "CLAUDE.md").unlink()
     (root / "CLAUDE.md").write_text("my own notes", encoding="utf-8")
     init_workspace(InitOptions(target_dir=root, force=True))
     assert (root / "CLAUDE.md").read_text(encoding="utf-8") == "my own notes"
