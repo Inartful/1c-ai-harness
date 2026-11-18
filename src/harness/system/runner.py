@@ -34,6 +34,7 @@ class CommandRunner(Protocol):
         timeout_s: float,
         cwd: Path | None = None,
         check: bool = True,
+        input_text: str | None = None,
     ) -> CommandResult:
         """Run a command and return its result."""
         ...
@@ -46,6 +47,7 @@ def run(
     cwd: Path | None = None,
     check: bool = True,
     env: Mapping[str, str] | None = None,
+    input_text: str | None = None,
 ) -> CommandResult:
     """Run an external command without a shell.
 
@@ -55,6 +57,7 @@ def run(
         cwd: Working directory.
         check: Raise on a non-zero return code.
         env: Full replacement environment, or None to inherit.
+        input_text: Text fed to stdin (keeps secrets out of argv); stdin is closed when None.
 
     Returns:
         The captured result.
@@ -81,6 +84,8 @@ def run(
         proc = subprocess.run(  # noqa: S603 - shell=False, argv list, resolved executable
             full,
             capture_output=True,
+            input=input_text,
+            stdin=None if input_text is not None else subprocess.DEVNULL,
             text=True,
             encoding="utf-8",
             errors="replace",

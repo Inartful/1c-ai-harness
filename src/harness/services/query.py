@@ -16,7 +16,9 @@ _QUERY_TIMEOUT_S = 300.0
 _PS_TEMPLATE = r"""
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Stop"
-$rawCfg = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("__CFG_B64__"))
+# Config (with credentials) arrives as ASCII Base64 on stdin, never in the command line.
+$cfgB64 = [Console]::In.ReadToEnd().Trim()
+$rawCfg = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($cfgB64))
 $cfg = $rawCfg | ConvertFrom-Json
 $parts = @()
 $qchar = [char]34
@@ -76,7 +78,15 @@ class QueryResult(BaseModel):
     seconds: float = 0.0
 
 
-def build_encoded_command(
+def encoded_script() -> str:
+    """Return the PowerShell script as a UTF-16LE Base64 `-EncodedCommand` payload.
+
+    The script contains no secrets; see `encode_config` for what goes to stdin.
+    """
+    return base64.b64encode(_PS_TEMPLATE.encode("utf-16-le")).decode("ascii")
+
+
+def encode_config(
     *,
     query: str,
     server: str | None = None,
@@ -85,7 +95,7 @@ def build_encoded_command(
     usr: str | None = None,
     pwd: str | None = None,
 ) -> str:
-    """Build a UTF-16LE Base64 PowerShell `-EncodedCommand` payload.
+    """Build the ASCII Base64 JSON config fed to the script's stdin.
 
     Args:
         query: 1C query language text.
@@ -96,7 +106,7 @@ def build_encoded_command(
         pwd: 1C password (`Pwd`).
 
     Returns:
-        Base64-encoded UTF-16LE PowerShell script.
+        Base64 of the UTF-8 JSON config.
     """
     payload = {
         "server": server or "",
@@ -106,11 +116,7 @@ def build_encoded_command(
         "pwd": pwd or "",
         "query": query,
     }
-    cfg_b64 = base64.b64encode(json.dumps(payload, ensure_ascii=False).encode("utf-8")).decode(
-        "ascii"
-    )
-    script = _PS_TEMPLATE.replace("__CFG_B64__", cfg_b64)
-    return base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+    return base64.b64encode(json.dumps(payload, ensure_ascii=False).encode("utf-8")).decode("ascii")
 
 
 def _get_env(name: str) -> str | None:
@@ -172,7 +178,7 @@ def run_query(
     if resolved_ssh in ("", "local", "none"):
         resolved_ssh = None
 
-    encoded = build_encoded_command(
+    config = encode_config(
         query=query,
         server=server,
         ref=ref,
@@ -180,13 +186,13 @@ def run_query(
         usr=resolved_usr,
         pwd=resolved_pwd,
     )
-    ps_args = ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded]
+    ps_args = ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded_script()]
     argv = (
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", resolved_ssh, *ps_args]
         if resolved_ssh
         else ps_args
     )
-    result = runner(argv, timeout_s=_QUERY_TIMEOUT_S)
+    result = runner(argv, timeout_s=_QUERY_TIMEOUT_S, input_text=config + "\n")
     raw = result.stdout.strip()
     if not raw:
         msg = f"empty response from COMConnector; stderr: {result.stderr.strip()}"

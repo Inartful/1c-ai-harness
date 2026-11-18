@@ -18,6 +18,8 @@ class FakeRunner:
         on_call: Callable[[Sequence[str]], None] | None = None,
     ) -> None:
         self.calls: list[tuple[str, ...]] = []
+        self.inputs: list[str | None] = []
+        self.cwds: list[Path | None] = []
         self._stdout = stdout
         self._fail_when = fail_when
         self._on_call = on_call
@@ -29,9 +31,12 @@ class FakeRunner:
         timeout_s: float,
         cwd: Path | None = None,
         check: bool = True,
+        input_text: str | None = None,
     ) -> CommandResult:
         assert timeout_s > 0
         self.calls.append(tuple(argv))
+        self.inputs.append(input_text)
+        self.cwds.append(cwd)
         if self._fail_when is not None and self._fail_when(argv):
             msg = f"fake failure: {' '.join(argv)}"
             raise CommandFailedError(msg)

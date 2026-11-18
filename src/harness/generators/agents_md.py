@@ -76,6 +76,12 @@ Platform gate (slow; needs 1C and a license):
 Rules:
 - If `harness` is on PATH, prefer `harness build` and `harness check`: they drive `ibcmd` and
   BSL Language Server and are about five times faster than the vrunner steps above.
+- `harness compile <ib> [--extension <name>]` runs the real platform compiler
+  (`DESIGNER /CheckModules`, seconds); `harness check --changed-from <pristine_dump>` lints only
+  changed modules and reports only NEW issues.
+- Extensions: run `harness ext lint <ext_dump> <base_dump>`. The platform silently accepts an
+  interception of a non-existent method and a stale `&ИзменениеИКонтроль` body; only lint
+  catches them.
 - `autumn-properties.json` is vrunner 3.0 format: settings live under `vrunner.*` and are resolved
   by walking up the command path (`vrunner.cf.load.*` -> `vrunner.cf.*` -> `vrunner.*`). A flat 2.6
   file is silently ignored — and then `syntax-check` checks an empty temporary infobase.

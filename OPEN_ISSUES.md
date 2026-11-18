@@ -34,10 +34,16 @@ State after the first end-to-end session on a real vendor configuration
 
 ## Open: harness backlog
 
-- `harness check` always analyzes the whole dump; filtering by changed files or a narrow
-  syntax-only rule set is not implemented. The JSON report is ~310 MB and is not rotated.
-- `harness build` always performs a full import; `ibcmd ... import files <list>` incremental
-  loading is not wired.
+- Done: `harness check --changed-from` analyzes only changed modules and reports only new
+  diagnostics; `harness pack --changed-from` imports only changed files. The whole-dump
+  `harness check` report is still ~310 MB and not rotated; `harness build` still imports fully.
+- `ext adopt` was verified round-trip for `Catalog` and `CommonModule`. Other classes reuse the
+  base `InternalInfo` generically; `pack` will reject the XML if a class needs more.
+- Form adoption is not automated (adopted forms carry the whole base form tree).
+- `ext lint` compares `&ИзменениеИКонтроль` bodies ignoring blank lines, whitespace and full-line
+  comments; the platform's own comparison rules are not documented.
+- `unpack .cfe --ib` and `ib create --cfe` load the extension twice (temp name, then the
+  internal name read from the export): ~36 s extra per extension.
 - `SPEC.md` still describes the old assumptions (flat settings, ghcr images,
   `--search-default-mode hybrid`, `-ExtendedModulesCheck`). It is a historical blueprint;
   `README.md` is current. Decide whether to update or archive it.

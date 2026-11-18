@@ -23,7 +23,7 @@ Never edit monolithic `ExchangeRules.xml` by hand.
    - In a rules archive exported from base `B`, `A -> B` is typically `CorrespondentExchangeRules.xml`, whereas in an archive from base `A`, `A -> B` is `ExchangeRules.xml`.
 3. **Edit & Syntax Check:**
    - Edit extracted `.bsl` files (e.g. `ПравилаКонвертацииОбъектов/Документы/.../Ext/ПослеЗагрузки.bsl`).
-   - Run `bsl-language-server analyze -s <ext_dir> -o <report_dir> -r console --silent` to verify 0 parse/syntax errors.
+   - Run `bsl-language-server analyze -s <ext_dir> -o <report_dir> -r console --silent` to verify 0 parse/syntax errors (run it with the current directory on the same drive as `<ext_dir>`: bsl-ls crashes with `'other' has different root` otherwise).
 4. **Pack & Validate XML:**
    ```powershell
    harness rules pack <unpacked_dir> <out.zip>
@@ -36,4 +36,6 @@ harness query --server "<1c-server>" --ref "<infobase_name>" -q "ВЫБРАТЬ 
 ```
 - **Credentials & SSH:** `ONEC_SSH`, `ONEC_USR`, and `ONEC_PWD` are automatically resolved from process env or Windows `HKCU\Environment`. Do not ask the user for passwords when these are set.
 - **Force local execution:** pass `--ssh local` to ignore `ONEC_SSH`.
+- **Secrets stay off the command line:** the query text and credentials are passed to PowerShell via stdin (Base64), so `ps`/process lists on the jump host never show the password.
+- **Grounding names first:** `harness meta find <dump> <regex>` / `harness meta show <dump> Документ.X` give exact attribute and table names for the query.
 - **1C COM requirements:** `comcntr.dll` (matching PowerShell bitness, usually 64-bit) must be registered (`regsvr32 <platform_bin>\comcntr.dll` from an elevated prompt) on the host where `V83.COMConnector` runs.

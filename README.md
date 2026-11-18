@@ -62,7 +62,8 @@ harness query --server "1c-srv" --ref "my_db" --usr "Admin" --pwd "secret" -q "�
 > **Note (`harness query`):** Windows-only (`V83.COMConnector`). Requires `comcntr.dll` matching
 > PowerShell bitness (usually 64-bit) to be registered (`regsvr32 <platform_bin>\comcntr.dll`).
 > Credentials and jump host can be set via `ONEC_SSH`, `ONEC_USR`, and `ONEC_PWD` (process env or
-> Windows `HKCU\Environment`); pass `--ssh local` to bypass `ONEC_SSH`.
+> Windows `HKCU\Environment`); pass `--ssh local` to bypass `ONEC_SSH`. The query text and
+> credentials reach PowerShell via stdin, never via the command line.
 
 ## Commands
 
@@ -85,6 +86,32 @@ harness query --server "1c-srv" --ref "my_db" --usr "Admin" --pwd "secret" -q "�
 | `harness rules unpack <src> <out>` | Unpack КД 2.x rules (`.zip` or `.xml`) into editable directories and `.bsl` handlers via `gitrules export`. |
 | `harness rules pack <src_dir> <out>` | Assemble unpacked `gitrules` directories back into `.xml` or `.zip` via `gitrules assembly`. |
 | `harness query` | Execute a 1C query via `V83.COMConnector` (Windows-only, locally or over `--ssh user@host`) and emit JSON. |
+
+### Binaries, infobases, extensions (agent-oriented, plain-text output)
+
+| Command | Purpose |
+|---|---|
+| `harness unpack <file> <out> [--ib DIR] [--base-cf CF]` | Decompile by suffix: `.cf`, `.cfe` (registered under its internal name), `.epf`/`.erf` (designer on a cached empty infobase), `.dt` (`out/cf` + `out/cfe/<name>`). |
+| `harness pack <src> <out> [--ib DIR] [--changed-from DIR] [--base-cf CF] [--no-apply]` | Build by output suffix: `.cf`, `.cfe` (import + `config apply` against the base when `--ib`/`--base-cf` is given), `.epf`/`.erf`, `.dt` (from an infobase dir). `--changed-from` imports only changed files (`import files --partial`). |
+| `harness ib create <ib> [--cf CF \| --dt DT] [--cfe CFE ...]`, `ib dump`, `ib extensions` | File infobase lifecycle. |
+| `harness compile <ib> [--extension NAME] [--modes ...]` | Real compiler: `DESIGNER /CheckModules`, errors merged across contexts, exit 1 on errors. |
+| `harness meta find <dump> <regex> [--type T]` / `meta show <dump> <Type.Name> [--methods]` | Find objects by name/synonym (English or Russian class names); compact summary of attributes, types, tabular sections, forms, modules and methods. |
+| `harness ext adopt/intercept/lint <ext_dump> <base_dump> ...` | Adopt base objects, generate `&Перед/&После/&Вместо/&ИзменениеИКонтроль` stubs, and lint the extension against the base. |
+| `harness check <dump> --changed-from <pristine>` | BSL LS on changed modules only, reporting only diagnostics the change introduced. |
+| `harness diff <pristine> <dump> [--patch]` | A/M/D file list (ignores `ConfigDumpInfo.xml`), optional unified diff of `.bsl`. |
+
+Verified on platform 8.3.27 (and encoded in these commands):
+
+- `ibcmd infobase config check` validates metadata only; BSL syntax errors pass it. Use `compile`.
+- Import, `config apply` and `/CheckModules` all accept `&Перед("NoSuchMethod")` and a
+  `&ИзменениеИКонтроль` body that no longer matches the base. `ext lint` catches both.
+- An adopted catalog needs `<ChildObjects/>` and its `InternalInfo` generated types; an adopted
+  common module must have neither. `ext adopt` mirrors the base object.
+- `/DumpExternalDataProcessorOrReportToFiles` takes the root `.xml` path, not a directory.
+- BSL LS crashes (`'other' has different root`) when its cwd is on another drive than the
+  sources; `check` runs it from the source directory.
+- Each `ibcmd` invocation costs ~12 s of start-up on a file infobase.
+- Infobase users: `--ib-user/--ib-pwd` or `ONEC_IB_USR/ONEC_IB_PWD`.
 
 ### Windows sandbox workaround
 

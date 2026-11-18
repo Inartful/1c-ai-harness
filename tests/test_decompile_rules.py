@@ -89,8 +89,11 @@ def test_pack_rules_to_zip_preserves_raw_files(tmp_path: Path) -> None:
             timeout_s: float,
             cwd: Path | None = None,
             check: bool = True,
+            input_text: str | None = None,
         ) -> CommandResult:
-            res = super().__call__(argv, timeout_s=timeout_s, cwd=cwd, check=check)
+            res = super().__call__(
+                argv, timeout_s=timeout_s, cwd=cwd, check=check, input_text=input_text
+            )
             stage_dir = Path(argv[3])
             (stage_dir / "ExchangeRules.xml").write_text("<New/>", encoding="utf-8")
             return res
